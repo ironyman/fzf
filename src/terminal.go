@@ -16,6 +16,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"log"
+	"path/filepath"
 
 	"github.com/mattn/go-runewidth"
 	"github.com/rivo/uniseg"
@@ -342,6 +344,7 @@ const (
 	actBeginningOfLine
 	actAbort
 	actAccept
+	actAcceptDirectory
 	actAcceptNonEmpty
 	actAcceptOrPrintQuery
 	actBackwardChar
@@ -525,6 +528,7 @@ func defaultKeymap() map[tui.Event][]*action {
 	add(tui.CtrlK, actUp)
 	add(tui.CtrlL, actClearScreen)
 	add(tui.CtrlM, actAccept)
+	addEvent(tui.AltKey('m'), actAcceptDirectory)
 	add(tui.CtrlN, actDown)
 	add(tui.CtrlP, actUp)
 	add(tui.CtrlU, actUnixLineDiscard)
@@ -3493,6 +3497,15 @@ func (t *Terminal) Loop() {
 				t.vmove(1, true)
 				req(reqList)
 			case actAccept:
+				req(reqClose)
+			case actAcceptDirectory:
+				t.printer = func(str string) {
+					absDir, err := filepath.Abs(filepath.Dir(str))
+					if err != nil {
+						log.Fatal(err)
+					}
+					fmt.Println(absDir)
+				}
 				req(reqClose)
 			case actAcceptNonEmpty:
 				if len(t.selected) > 0 || t.merger.Length() > 0 || !t.reading && t.count == 0 {
