@@ -117,6 +117,7 @@ func Run(opts *Options, version string, revision string) {
 		reader = NewReader(func(data []byte) bool {
 			return chunkList.Push(data)
 		}, eventBox, opts.ReadZero, opts.Filter == nil)
+		reader.fileSearchRoot = opts.FileSearchRoot
 		go reader.ReadSource()
 	}
 

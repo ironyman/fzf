@@ -18,21 +18,22 @@ import (
 
 // Reader reads from command or standard input
 type Reader struct {
-	pusher   func([]byte) bool
-	eventBox *util.EventBox
-	delimNil bool
-	event    int32
-	finChan  chan bool
-	mutex    sync.Mutex
-	exec     *exec.Cmd
-	command  *string
-	killed   bool
-	wait     bool
+	pusher         func([]byte) bool
+	eventBox       *util.EventBox
+	delimNil       bool
+	event          int32
+	finChan        chan bool
+	mutex          sync.Mutex
+	exec           *exec.Cmd
+	command        *string
+	killed         bool
+	wait           bool
+	fileSearchRoot string
 }
 
 // NewReader returns new Reader object
 func NewReader(pusher func([]byte) bool, eventBox *util.EventBox, delimNil bool, wait bool) *Reader {
-	return &Reader{pusher, eventBox, delimNil, int32(EvtReady), make(chan bool, 1), sync.Mutex{}, nil, nil, false, wait}
+	return &Reader{pusher, eventBox, delimNil, int32(EvtReady), make(chan bool, 1), sync.Mutex{}, nil, nil, false, wait, "."}
 }
 
 func (r *Reader) startEventPoller() {
@@ -162,6 +163,11 @@ func (r *Reader) readFromStdin() bool {
 }
 
 func (r *Reader) readFiles() bool {
+	rootDir := "."
+	if r.fileSearchRoot != "" {
+		rootDir = r.fileSearchRoot
+	}
+
 	r.killed = false
 	fn := func(path string, mode os.FileInfo) error {
 		path = filepath.Clean(path)
@@ -184,7 +190,7 @@ func (r *Reader) readFiles() bool {
 	cb := walker.WithErrorCallback(func(pathname string, err error) error {
 		return nil
 	})
-	return walker.Walk(".", fn, cb) == nil
+	return walker.Walk(rootDir, fn, cb) == nil
 }
 
 func (r *Reader) readFromCommand(shell *string, command string) bool {

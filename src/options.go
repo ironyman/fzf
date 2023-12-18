@@ -39,6 +39,7 @@ const usage = `usage: fzf [options]
     --tiebreak=CRI[,..]    Comma-separated list of sort criteria to apply
                            when the scores are tied [length|chunk|begin|end|index]
                            (default: length)
+    -r, --root=DIR         Read files starting from root directory
 
   Interface
     -m, --multi[=MAX]      Enable multi-select with tab/shift-tab
@@ -273,72 +274,73 @@ func firstLine(s string) string {
 
 // Options stores the values of command-line options
 type Options struct {
-	Fuzzy        bool
-	FuzzyAlgo    algo.Algo
-	Scheme       string
-	Extended     bool
-	Phony        bool
-	Case         Case
-	Normalize    bool
-	Nth          []Range
-	WithNth      []Range
-	Delimiter    Delimiter
-	Sort         int
-	Track        trackOption
-	Tac          bool
-	Criteria     []criterion
-	Multi        int
-	Ansi         bool
-	Mouse        bool
-	Theme        *tui.ColorTheme
-	Black        bool
-	Bold         bool
-	Height       heightSpec
-	MinHeight    int
-	Layout       layoutType
-	Cycle        bool
-	KeepRight    bool
-	Hscroll      bool
-	HscrollOff   int
-	ScrollOff    int
-	FileWord     bool
-	InfoStyle    infoStyle
-	InfoSep      string
-	Separator    *string
-	JumpLabels   string
-	Prompt       string
-	Pointer      string
-	Marker       string
-	Query        string
-	Select1      bool
-	Exit0        bool
-	Filter       *string
-	ToggleSort   bool
-	Expect       map[tui.Event]string
-	Keymap       map[tui.Event][]*action
-	Preview      previewOpts
-	PrintQuery   bool
-	ReadZero     bool
-	Printer      func(string)
-	PrintSep     string
-	Sync         bool
-	History      *History
-	Header       []string
-	HeaderLines  int
-	HeaderFirst  bool
-	Ellipsis     string
-	Scrollbar    *string
-	Margin       [4]sizeSpec
-	Padding      [4]sizeSpec
-	BorderShape  tui.BorderShape
-	BorderLabel  labelOpts
-	PreviewLabel labelOpts
-	Unicode      bool
-	Tabstop      int
-	ListenAddr   *listenAddress
-	Unsafe       bool
-	ClearOnExit  bool
-	Version      bool
+	Fuzzy           bool
+	FuzzyAlgo       algo.Algo
+	Scheme          string
+	Extended        bool
+	Phony           bool
+	Case            Case
+	Normalize       bool
+	Nth             []Range
+	WithNth         []Range
+	Delimiter       Delimiter
+	Sort            int
+	Track           trackOption
+	Tac                bool
+	Criteria        []criterion
+	FileSearchRoot  string
+	Multi           int
+	Ansi            bool
+	Mouse           bool
+	Theme           *tui.ColorTheme
+	Black           bool
+	Bold            bool
+	Height          heightSpec
+	MinHeight       int
+	Layout          layoutType
+	Cycle           bool
+	KeepRight       bool
+	Hscroll         bool
+	HscrollOff      int
+	ScrollOff       int
+	FileWord        bool
+	InfoStyle       infoStyle
+	InfoSep         string
+	Separator       *string
+	JumpLabels      string
+	Prompt          string
+	Pointer         string
+	Marker          string
+	Query           string
+	Select1         bool
+	Exit0           bool
+	Filter          *string
+	ToggleSort      bool
+	Expect          map[tui.Event]string
+	Keymap          map[tui.Event][]*action
+	Preview         previewOpts
+	PrintQuery      bool
+	ReadZero        bool
+	Printer         func(string)
+	PrintSep        string
+	Sync            bool
+	History         *History
+	Header          []string
+	HeaderLines     int
+	HeaderFirst     bool
+	Ellipsis        string
+	Scrollbar       *string
+	Margin          [4]sizeSpec
+	Padding         [4]sizeSpec
+	BorderShape     tui.BorderShape
+	BorderLabel     labelOpts
+	PreviewLabel    labelOpts
+	Unicode         bool
+	Tabstop         int
+	ListenAddr      *listenAddress
+	Unsafe          bool
+	ClearOnExit     bool
+	Version         bool
 }
 
 func defaultPreviewOpts(command string) previewOpts {
@@ -347,68 +349,69 @@ func defaultPreviewOpts(command string) previewOpts {
 
 func defaultOptions() *Options {
 	return &Options{
-		Fuzzy:        true,
-		FuzzyAlgo:    algo.FuzzyMatchV2,
-		Scheme:       "default",
-		Extended:     true,
-		Phony:        false,
-		Case:         CaseSmart,
-		Normalize:    true,
-		Nth:          make([]Range, 0),
-		WithNth:      make([]Range, 0),
-		Delimiter:    Delimiter{},
-		Sort:         1000,
-		Track:        trackDisabled,
-		Tac:          false,
-		Criteria:     []criterion{byScore, byLength},
-		Multi:        0,
-		Ansi:         false,
-		Mouse:        true,
-		Theme:        tui.EmptyTheme(),
-		Black:        false,
-		Bold:         true,
-		MinHeight:    10,
-		Layout:       layoutDefault,
-		Cycle:        false,
-		KeepRight:    false,
-		Hscroll:      true,
-		HscrollOff:   10,
-		ScrollOff:    0,
-		FileWord:     false,
-		InfoStyle:    infoDefault,
-		Separator:    nil,
-		JumpLabels:   defaultJumpLabels,
-		Prompt:       "> ",
-		Pointer:      ">",
-		Marker:       ">",
-		Query:        "",
-		Select1:      false,
-		Exit0:        false,
-		Filter:       nil,
-		ToggleSort:   false,
-		Expect:       make(map[tui.Event]string),
-		Keymap:       make(map[tui.Event][]*action),
-		Preview:      defaultPreviewOpts(""),
-		PrintQuery:   false,
-		ReadZero:     false,
-		Printer:      func(str string) { fmt.Println(str) },
-		PrintSep:     "\n",
-		Sync:         false,
-		History:      nil,
-		Header:       make([]string, 0),
-		HeaderLines:  0,
-		HeaderFirst:  false,
-		Ellipsis:     "..",
-		Scrollbar:    nil,
-		Margin:       defaultMargin(),
-		Padding:      defaultMargin(),
-		Unicode:      true,
-		Tabstop:      8,
-		BorderLabel:  labelOpts{},
-		PreviewLabel: labelOpts{},
-		Unsafe:       false,
-		ClearOnExit:  true,
-		Version:      false}
+		Fuzzy         : true,
+		FuzzyAlgo     : algo.FuzzyMatchV2,
+		Scheme        : "default",
+		Extended      : true,
+		Phony         : false,
+		Case          : CaseSmart,
+		Normalize     : true,
+		Nth           : make([]Range, 0),
+		WithNth       : make([]Range, 0),
+		Delimiter     : Delimiter{},
+		Sort          : 1000,
+		Track         : trackDisabled,
+		Tac           : false,
+		Criteria      : []criterion{byScore, byLength},
+		FileSearchRoot: ".",
+		Multi         : 0,
+		Ansi          : false,
+		Mouse         : true,
+		Theme         : tui.EmptyTheme(),
+		Black         : false,
+		Bold          : true,
+		MinHeight     : 10,
+		Layout        : layoutDefault,
+		Cycle         : false,
+		KeepRight     : false,
+		Hscroll       : true,
+		HscrollOff    : 10,
+		ScrollOff     : 0,
+		FileWord      : false,
+		InfoStyle     : infoDefault,
+		Separator     : nil,
+		JumpLabels    : defaultJumpLabels,
+		Prompt        : "> ",
+		Pointer       : ">",
+		Marker        : ">",
+		Query         : "",
+		Select1       : false,
+		Exit0         : false,
+		Filter        : nil,
+		ToggleSort    : false,
+		Expect        : make(map[tui.Event]string),
+		Keymap        : make(map[tui.Event][]*action),
+		Preview       : defaultPreviewOpts(""),
+		PrintQuery    : false,
+		ReadZero      : false,
+		Printer       : func(str string) { fmt.Println(str) },
+		PrintSep      : "\n",
+		Sync          : false,
+		History       : nil,
+		Header        : make([]string, 0),
+		HeaderLines   : 0,
+		HeaderFirst   : false,
+		Ellipsis      : "..",
+		Scrollbar     : nil,
+		Margin        : defaultMargin(),
+		Padding       : defaultMargin(),
+		Unicode       : true,
+		Tabstop       : 8,
+		BorderLabel   : labelOpts{},
+		PreviewLabel  : labelOpts{},
+		Unsafe        : false,
+		ClearOnExit   : true,
+		Version       : false}
 }
 
 func help(code int) {
@@ -1619,6 +1622,8 @@ func parseOptions(opts *Options, allArgs []string) {
 			opts.Phony = true
 		case "--tiebreak":
 			opts.Criteria = parseTiebreak(nextString(allArgs, &i, "sort criterion required"))
+		case "-r", "--root":
+			opts.FileSearchRoot = nextString(allArgs, &i, "directory required")
 		case "--bind":
 			parseKeymap(opts.Keymap, nextString(allArgs, &i, "bind expression required"), errorExit)
 		case "--color":
@@ -1917,6 +1922,8 @@ func parseOptions(opts *Options, allArgs []string) {
 				}
 			} else if match, value := optString(arg, "--tiebreak="); match {
 				opts.Criteria = parseTiebreak(value)
+			} else if match, value := optString(arg, "--root="); match {
+				opts.FileSearchRoot = value
 			} else if match, value := optString(arg, "--color="); match {
 				opts.Theme = parseTheme(opts.Theme, value)
 			} else if match, value := optString(arg, "--bind="); match {
